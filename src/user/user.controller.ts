@@ -13,21 +13,24 @@ import {
   Patch,
   Post,
   Put,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { GetUser } from '../auth/decorator';
 import { JwtGuard } from '../auth/guard';
 import { EditUserDto } from './dto';
-import { UserService } from './user.service';
+import { CommonService, UserService } from './user.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @UseGuards(JwtGuard)
 @Controller('users')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService, private commonService: CommonService) {}
   @Post('me')
   getMe(@GetUser() user: User) {
-    return user;
+    return this.userService.getUser(user.id);
   }
 
 
@@ -38,4 +41,13 @@ export class UserController {
   ) {
     return this.userService.editUser(userId, dto);
   }
+
+  
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadFile(@GetUser() user: User, @UploadedFile() file: Express.Multer.File) {
+    console.log('fileString', file);
+    return this.commonService.UploadedFile(user.id, file.buffer, file.originalname);
+  }
 }
+
